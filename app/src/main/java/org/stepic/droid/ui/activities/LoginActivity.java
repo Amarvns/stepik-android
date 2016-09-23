@@ -16,11 +16,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.CallbackManager;
-import com.facebook.FacebookCallback;
-import com.facebook.FacebookException;
-import com.facebook.login.LoginManager;
-import com.facebook.login.LoginResult;
+import com.facebook.accountkit.AccountKit;
+import com.facebook.accountkit.AccountKitLoginResult;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -90,7 +87,6 @@ public class LoginActivity extends FragmentActivityBase {
     ProgressHandler progressHandler;
 
     GoogleApiClient mGoogleApiClient;
-    private CallbackManager callbackManager;
     private TwitterAuthClient twitterAuthClient;
 
     @Override
@@ -156,39 +152,6 @@ public class LoginActivity extends FragmentActivityBase {
         }
 
         mSocialRecyclerView.setLayoutManager(layoutManager);
-        callbackManager = CallbackManager.Factory.create();
-        LoginManager.getInstance().registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
-            @Override
-            public void onSuccess(LoginResult loginResult) {
-                // App code
-                Toast.makeText(LoginActivity.this, "onSuccess", Toast.LENGTH_SHORT).show();
-                loginManager.loginWithNativeProviderCode(loginResult.getAccessToken().getToken(),
-                        SocialManager.SocialType.facebook,
-                        progressHandler,
-                        new ActivityFinisher() {
-                            @Override
-                            public void onFinish() {
-                                finish();
-                            }
-                        },
-                        new FailLoginSupplementaryHandler() {
-                            @Override
-                            public void onFailLogin(Throwable t) {
-                                LoginManager.getInstance().logOut();
-                            }
-                        });
-            }
-
-            @Override
-            public void onCancel() {
-                Toast.makeText(LoginActivity.this, "onCancel", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onError(FacebookException exception) {
-                Toast.makeText(LoginActivity.this, "onError", Toast.LENGTH_SHORT).show();
-            }
-        });
         twitterAuthClient = new TwitterAuthClient();
         Callback<TwitterSession> twitterSessionCallback = new Callback<TwitterSession>() {
             @Override
@@ -336,7 +299,40 @@ public class LoginActivity extends FragmentActivityBase {
         }
 
         super.onActivityResult(requestCode, resultCode, data);
-        callbackManager.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == APP_REQUEST_CODE) { // TODO: 23.09.16 add OK or CANCEL handling
+            AccountKitLoginResult loginResult = data.getParcelableExtra(AccountKitLoginResult.RESULT_KEY);
+            String toastMessage;
+            if (loginResult.getError() != null) {
+                toastMessage = loginResult.getError().getErrorType().getMessage();
+            } else if (loginResult.wasCancelled()) {
+                toastMessage = "Login Cancelled";
+            } else {
+                toastMessage = "fb Login success";
+                String code = loginResult.getAuthorizationCode();
+                loginManager.loginWithNativeProviderCode(code,
+                        SocialManager.SocialType.facebook,
+                        progressHandler,
+                        new ActivityFinisher() {
+                            @Override
+                            public void onFinish() {
+                                finish();
+                            }
+                        },
+                        new FailLoginSupplementaryHandler() {
+                            @Override
+                            public void onFailLogin(Throwable t) {
+                                AccountKit.logOut();
+                            }
+                        });
+            }
+
+            // Surface the result to your user in an appropriate way.
+            Toast.makeText(
+                    this,
+                    toastMessage,
+                    Toast.LENGTH_LONG)
+                    .show();
+        }
         if (requestCode == AppConstants.REQUEST_CODE_GOOGLE_SIGN_IN && resultCode == Activity.RESULT_OK) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             if (result.isSuccess()) {
@@ -371,4 +367,7 @@ public class LoginActivity extends FragmentActivityBase {
     private void onInternetProblems() {
         Toast.makeText(this, R.string.connectionProblems, Toast.LENGTH_SHORT).show();
     }
+
+    public static int APP_REQUEST_CODE = 99;
+
 }

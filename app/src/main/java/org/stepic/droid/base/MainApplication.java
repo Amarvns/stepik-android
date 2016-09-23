@@ -5,8 +5,7 @@ import android.os.Build;
 import android.support.multidex.MultiDex;
 import android.support.multidex.MultiDexApplication;
 
-import com.facebook.FacebookSdk;
-import com.facebook.appevents.AppEventsLogger;
+import com.facebook.accountkit.AccountKit;
 import com.vk.sdk.VKSdk;
 import com.yandex.metrica.YandexMetrica;
 
@@ -42,8 +41,7 @@ public class MainApplication extends MultiDexApplication {
                 .setFontAttrId(R.attr.fontPath)
                 .build()
         );
-        FacebookSdk.sdkInitialize(getApplicationContext());
-        AppEventsLogger.activateApp(this);
+        AccountKit.initialize(getApplicationContext());
         VKSdk.initialize(this);
 
         StorageModule storageModule = new StorageModule(this);

@@ -9,7 +9,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.facebook.login.LoginManager;
+import com.facebook.accountkit.ui.AccountKitActivity;
+import com.facebook.accountkit.ui.AccountKitConfiguration;
+import com.facebook.accountkit.ui.LoginType;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.twitter.sdk.android.core.Callback;
@@ -23,11 +25,11 @@ import org.stepic.droid.analytic.Analytic;
 import org.stepic.droid.base.MainApplication;
 import org.stepic.droid.social.ISocialType;
 import org.stepic.droid.social.SocialManager;
+import org.stepic.droid.ui.activities.LoginActivity;
 import org.stepic.droid.ui.listeners.StepicOnClickItemListener;
 import org.stepic.droid.util.AppConstants;
 import org.stepic.droid.web.IApi;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -93,10 +95,8 @@ public class SocialAuthAdapter extends RecyclerView.Adapter<SocialAuthAdapter.So
             Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(client);
             activity.startActivityForResult(signInIntent, AppConstants.REQUEST_CODE_GOOGLE_SIGN_IN);
         } else if (type == SocialManager.SocialType.facebook) {
-            List<String> permissions = new ArrayList<>();
-            permissions.add("email");
             Toast.makeText(activity, "facebook", Toast.LENGTH_SHORT).show();
-            LoginManager.getInstance().logInWithReadPermissions(activity, permissions);
+            onLoginPhone();
         } else if (type == SocialManager.SocialType.vk) {
             Toast.makeText(activity, "vk", Toast.LENGTH_SHORT).show();
             String[] scopes = {VKScope.EMAIL};
@@ -107,6 +107,19 @@ public class SocialAuthAdapter extends RecyclerView.Adapter<SocialAuthAdapter.So
         } else {
             api.loginWithSocial(activity, type);
         }
+    }
+
+    public void onLoginPhone() {
+        final Intent intent = new Intent(activity, AccountKitActivity.class);
+        AccountKitConfiguration.AccountKitConfigurationBuilder configurationBuilder =
+                new AccountKitConfiguration.AccountKitConfigurationBuilder(
+                        LoginType.EMAIL,
+                        AccountKitActivity.ResponseType.CODE); // or .ResponseType.TOKEN
+        // ... perform additional configuration ...
+        intent.putExtra(
+                AccountKitActivity.ACCOUNT_KIT_ACTIVITY_CONFIGURATION,
+                configurationBuilder.build());
+        activity.startActivityForResult(intent, LoginActivity.APP_REQUEST_CODE);
     }
 
     public static class SocialViewHolder extends RecyclerView.ViewHolder {

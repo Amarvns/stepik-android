@@ -23,7 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.facebook.login.LoginManager;
+import com.facebook.accountkit.AccountKit;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.ConnectionResult;
@@ -468,7 +468,7 @@ public class MainFeedActivity extends BackToExitActivityBase
     public void onLogout() {
         Twitter.getSessionManager().clearActiveSession();
         Twitter.logOut();
-        LoginManager.getInstance().logOut();
+        AccountKit.logOut();
         VKSdk.logout();
         Auth.GoogleSignInApi.signOut(googleApiClient);
         sharedPreferenceHelper.deleteAuthInfo();
